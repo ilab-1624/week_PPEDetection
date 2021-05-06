@@ -1,0 +1,70 @@
+{
+  "Comment": "RekognitionLessonV6",
+  "StartAt": "faceDetect",
+  "States": {
+    "faceDetect": {
+      "Type": "Task",
+      "Resource": "<your faceDetect lambda ARN>",
+      "Next": "isFace?"
+    },
+     "isFace?": {
+        "Type": "Choice",
+        "Choices": [
+          {
+            "Variable": "$.faceDetection.detectionResult.faceCount",
+            "NumericGreaterThan": 0,
+            "Next": "Parallel State"
+          }
+        ]
+      },
+    "Parallel State": {
+      "Type": "Parallel",
+      "InputPath": "$",
+      "OutputPath": "$",
+      "ResultPath":"$.ParallelResultPath",
+      "Branches": [
+        {
+          "StartAt": "faceSearch",
+          "States": {
+            "faceSearch": {
+              "Type": "Task",
+              "InputPath":"$",
+              "ResultPath": "$.stateOutput",
+              "OutputPath":"$.stateOutput",
+              "Resource": "<your faceSearch lambda ARN>",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "ppeDetect",
+          "States": {
+            "ppeDetect": {
+              "Type": "Task",
+              "InputPath":"$",
+              "ResultPath": "$.stateOutput",
+              "OutputPath":"$.stateOutput",
+              "Resource": "<your ppeDetect lambda ARN>",
+              "End": true
+            }
+          }
+        }
+      ],
+      "Next": "signinValidate"
+    },
+    "signinValidate": {
+      "Type": "Task",
+      "Resource": "<your signinValidate lambda ARN>",
+      "Next":"alertNotify"
+    },
+    
+    "alertNotify": {
+      "Type": "Task",
+      "InputPath":"$",
+      "ResultPath": "$.stateOutput",
+      "OutputPath":"$.stateOutput",
+      "Resource": "<your alertNotify lambda ARN>",
+      "End": true
+    }        
+  }
+}
